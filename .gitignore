@@ -1,0 +1,15 @@
+*.pth
+.idea/
+*.pyc
+images/
+detect_imgs
+*.bin
+results/
+test~~.py
+*.mp4
+build/
+*.c
+*.so
+onnx_files
+weights
+tensorboard_log
