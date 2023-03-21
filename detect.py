@@ -57,7 +57,7 @@ if __name__ == '__main__':
         timer.start(i)
 
         with torch.no_grad(), timer.counter('forward'):
-            seg_result = model(img.cuda().detach(), resize_shape=resize_shape)[0]
+            seg_result = model(img.cuda().detach(), resize_shape=resize_shape, post_mode='detect')[0]
 
         with timer.counter('draw'):
             if seg_result is not None:

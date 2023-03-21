@@ -41,7 +41,7 @@ class Solov2_res50:
         self.val_interval = 1
         self.start_save = 0
 
-        self.val_weight = 'weights/Solov2_res50_36.pth'
+        self.val_weight = 'weights/Solov2_res50_32.pth'
         self.val_bs = 1
         self.val_aug = ValAug(img_scale=[(1333, 800)])
         self.val_num = -1
@@ -145,7 +145,7 @@ class Custom_light_res50(Solov2_light_res50):
         self.val_aug = ValAug(mean=[127., 127., 127], std=[60., 60., 60],
                               img_scale=[(512, 512)])
         self.val_weight = 'weights/Custom_light_res50_340.pth'
-        self.detect_images = self.val_imgs  # '/home/feiyu/Data/nanjiao/nanjiao_seg/语义分割/bgs'
+        self.detect_images = 'detect_imgs'  # '/home/feiyu/Data/nanjiao/nanjiao_seg/语义分割/bgs'
         if self.mode in ('detect', 'onnx'):
             self.postprocess_para['update_thr'] = 0.3
         self.postprocess_para['mask_thr'] = 0.5

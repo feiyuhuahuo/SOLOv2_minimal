@@ -35,6 +35,7 @@ if __name__ == '__main__':
     cfg.print_cfg()
 
     onnx_path = 'onnx_files/Custom_light_res50.onnx'
+    print(f'Using model: {onnx_path}\n')
     sess = ort.InferenceSession(onnx_path, providers=['CUDAExecutionProvider'])
     name1 = sess.get_inputs()[0].name
 
@@ -53,12 +54,11 @@ if __name__ == '__main__':
     for i, img_path in enumerate(imgs):
         timer.start(i)
 
-        input_img = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_COLOR)
+        input_img = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_GRAYSCALE)
         img_resized = cv2.resize(input_img, cfg.onnx_shape)
         with torch.no_grad(), timer.counter('forward'):
             try:
-                seg_result = sess.run(None, {name1: img_resized, 'detect': np.array(0.4, dtype='float64'),
-                                             'mask': np.array(0.5, dtype='float64')})
+                seg_result = sess.run(None, {name1: img_resized})
             except:
                 seg_result = None
 
@@ -84,6 +84,9 @@ if __name__ == '__main__':
                     vis_pos = (max(int(center_x) - 10, 0), int(center_y))
                     cv2.putText(seg_show, label_text, vis_pos, cv2.FONT_HERSHEY_COMPLEX, 0.4, tuple(color))
 
+                # print(seg_result)
+                # cv2.imshow('aa', seg_show)
+                # cv2.waitKey()
                 cv2.imwrite(f'{save_path}/{img_path.split("/")[-1]}', seg_show)
 
         timer.add_batch_time()

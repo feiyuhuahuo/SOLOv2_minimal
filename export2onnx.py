@@ -2,7 +2,6 @@
 # -*- coding:utf-8 -*-
 import os
 import pdb
-import torch
 from model.solov2 import SOLOv2
 from configs import *
 import cv2
@@ -22,15 +21,15 @@ if __name__ == '__main__':
     file_path = f'onnx_files/{cfg.__class__.__name__}.onnx'
 
     input_size = cfg.onnx_shape
-    class_suffix = '-'.join(list(cfg.class_names[1:]))
-    inp_names = [f'seg_{input_size[0]}_{input_size[1]}-{class_suffix}', 'detect_thre', 'mask_thre']
+    class_suffix = '-'.join(list(cfg.class_names))
+    inp_names = [f'seg_{input_size[0]}_{input_size[1]}-{class_suffix}']
     # input_img = torch.randint(0, 255, (input_size[0], input_size[1], 3), device='cuda', dtype=torch.uint8)
-    input_img = cv2.imread('detect_imgs/test1.bmp', cv2.IMREAD_COLOR)
+    input_img = cv2.imread('detect_imgs/test1.bmp', cv2.IMREAD_GRAYSCALE)
     input_img = cv2.resize(input_img, input_size)
     input_img = torch.from_numpy(input_img).cuda()
 
     torch.onnx.export(model,
-                      (input_img, {'detect_thre': 0.3, 'mask_thre': 0.5}),
+                      input_img,
                       file_path,
                       input_names=inp_names,
                       output_names=['output'],

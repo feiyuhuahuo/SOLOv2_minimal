@@ -11,8 +11,9 @@ CUDA 11.6
 ## Performance 
 This project is trained on one RTX3090. Batch size is 16 for light-Resnet50 and light-Resnet34, 10 for Resnet50.  
 [Download weights here](https://github.com/feiyuhuahuo/SOLOv2_minimal/releases/tag/v1.0)  
+mask mAP:  
 
-|    Backbone    | official | this project |
+| configuration  | official | this project |
 |:--------------:|:--------:|:------------:|
 |    Resnet50    |   37.5   |     38.1     |
 | light-Resnet50 |   33.7   |     33.9     |

@@ -1,11 +1,8 @@
-import pdb
-
 import torch.nn as nn
 from model.resnet import ResNet
 from model.fpn import FPN
 from model.mask_feature import MaskFeatHead
 from model.head import SOLOv2Head
-from get_seg_script import get_seg_scripted
 
 
 class SOLOv2(nn.Module):
@@ -17,7 +14,7 @@ class SOLOv2(nn.Module):
 
         self.bbox_head = SOLOv2Head(num_classes=cfg.num_classes, stacked_convs=cfg.head_stacked_convs,
                                     scale_ranges=cfg.head_scale_ranges, seg_feat_channels=cfg.head_seg_feat_c,
-                                    ins_out_channels=cfg.head_ins_out_c, mode=cfg.mode)
+                                    ins_out_channels=cfg.head_ins_out_c)
         self.postprocess_cfg = cfg.postprocess_para
 
         if cfg.mode == 'train':
@@ -37,7 +34,7 @@ class SOLOv2(nn.Module):
         self.bbox_head.init_weights()
 
     def forward(self, img, gt_labels=None, gt_bboxes=None, gt_masks=None, ori_shape=None, resize_shape=None,
-                detect_thre=None, mask_thre=None):
+                post_mode='detect'):
         if self.mode == 'onnx':
             img = self.onnx_trans(img)
 
@@ -59,7 +56,7 @@ class SOLOv2(nn.Module):
             # else:
 
             seg_result = self.bbox_head.get_seg(cate_preds, kernel_preds, mask_feat_pred, ori_shape,
-                                                resize_shape, self.postprocess_cfg, detect_thre, mask_thre)
+                                                resize_shape, self.postprocess_cfg, post_mode)
 
             return seg_result
 

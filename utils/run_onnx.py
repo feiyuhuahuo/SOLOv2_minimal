@@ -2,13 +2,12 @@
 # -*- coding:utf-8 -*-
 import pdb
 import numpy as np
-from configs import *
 import cv2
 import onnxruntime as ort
 
 if __name__ == '__main__':
     input_size = (512, 512)
-    input_img = cv2.imread('detect_imgs/test1.bmp', cv2.IMREAD_COLOR)
+    input_img = cv2.imread('detect_imgs/test4.bmp', cv2.IMREAD_COLOR)
     input_img = cv2.resize(input_img, input_size)
     # input_img = np.random.randint(0, 255, (512, 512, 3)).astype('uint8')
 

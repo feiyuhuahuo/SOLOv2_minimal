@@ -39,7 +39,7 @@ def val(cfg, model=None):
         img = img.cuda().detach()
 
         with torch.no_grad(), timer.counter('forward'):
-            seg_result = model(img, ori_shape=ori_shape, resize_shape=resize_shape)[0]
+            seg_result = model(img, ori_shape=ori_shape, resize_shape=resize_shape, post_mode='val')[0]
 
         with timer.counter('metric'):
             if seg_result is not None:
@@ -108,6 +108,6 @@ def val(cfg, model=None):
 
 
 if __name__ == '__main__':
-    cfg = Solov2_light_res34(mode='val')
+    cfg = Custom_light_res50(mode='val')
     cfg.print_cfg()
     val(cfg)

@@ -85,7 +85,7 @@ def dice_loss(input, target):
 class SOLOv2Head(nn.Module):
     def __init__(self, num_classes, in_channels=256, stacked_convs=4, seg_feat_channels=256,
                  strides=(8, 8, 16, 32, 32), scale_ranges=((8, 32), (16, 64), (32, 128), (64, 256), (128, 512)),
-                 sigma=0.2, num_grids=(40, 36, 24, 16, 12), ins_out_channels=64, mode='train'):
+                 sigma=0.2, num_grids=(40, 36, 24, 16, 12), ins_out_channels=64):
         super(SOLOv2Head, self).__init__()
         self.num_grids = num_grids
         self.cate_out_ch = num_classes - 1
@@ -98,7 +98,6 @@ class SOLOv2Head(nn.Module):
         self.scale_ranges = scale_ranges
         self.ins_loss_weight = 3.0
         self.max_num = 100
-        self.mode = mode
         self._init_layers()
 
     def _init_layers(self):
@@ -343,7 +342,7 @@ class SOLOv2Head(nn.Module):
         return loss_cate, loss_ins
 
     def get_seg(self, cate_preds, kernel_preds, seg_pred, ori_shape=None, resize_shape=None, cfg=None,
-                detect_thre=None, mask_thre=None):
+                post_mode='detect'):
         batch_size = seg_pred.shape[0]
 
         num_levels = len(cate_preds)
@@ -361,16 +360,13 @@ class SOLOv2Head(nn.Module):
             kernel_pred_list = torch.cat(kernel_pred_list, dim=0)
 
             result = self.get_seg_single(cate_pred_list, seg_pred_list, kernel_pred_list,
-                                         featmap_size, resize_shape, ori_shape, cfg, detect_thre, mask_thre)
+                                         featmap_size, resize_shape, ori_shape, cfg, post_mode)
             result_batch_list.append(result)
 
         return result_batch_list
 
     def get_seg_single(self, cate_preds, seg_preds, kernel_preds, featmap_size, resize_shape, ori_shape, cfg,
-                       detect_thre, mask_thre):
-
-        detect_thre = detect_thre if self.mode == 'onnx' else cfg['update_thr']
-        mask_thre = mask_thre if self.mode == 'onnx' else cfg['mask_thr']
+                       post_mode):
 
         # process.
         inds = (cate_preds > cfg['score_thr'])
@@ -400,7 +396,7 @@ class SOLOv2Head(nn.Module):
         seg_preds = F.conv2d(seg_preds, kernel_preds, stride=1).squeeze(0).sigmoid()
 
         # mask.
-        seg_masks = seg_preds > mask_thre
+        seg_masks = seg_preds > cfg['mask_thr']
         sum_masks = seg_masks.sum((1, 2)).float()
 
         # filter.
@@ -433,7 +429,7 @@ class SOLOv2Head(nn.Module):
         cate_scores = matrix_nms(seg_masks, cate_labels, cate_scores, sum_masks=sum_masks)
 
         # filter.
-        keep = cate_scores >= detect_thre
+        keep = cate_scores >= cfg['update_thr']
         if keep.sum() == 0:
             return None
         seg_preds = seg_preds[keep, :, :]
@@ -443,7 +439,7 @@ class SOLOv2Head(nn.Module):
         # sort and keep top_k
         sort_inds = torch.argsort(cate_scores, descending=True)
 
-        if not self.training:
+        if post_mode == 'val':
             if sort_inds.shape[0] > self.max_num:
                 sort_inds = sort_inds[:self.max_num]
 
@@ -455,12 +451,12 @@ class SOLOv2Head(nn.Module):
         upsampled_size_out = (featmap_size[0] * 4, featmap_size[1] * 4)
         seg_masks = F.interpolate(seg_preds.unsqueeze(0), size=upsampled_size_out, mode='bilinear')[:, :, :h, :w]
 
-        if not self.training:
+        if post_mode == 'val':
             seg_masks = F.interpolate(seg_masks, size=ori_shape, mode='bilinear')
 
         seg_masks = seg_masks.squeeze(0)
-        seg_masks = (seg_masks > mask_thre).to(torch.uint8)
-        if self.mode in ('detect', 'onnx'):
+        seg_masks = (seg_masks > cfg['mask_thr']).to(torch.uint8)
+        if post_mode in ('detect', 'onnx'):
             mask_density = seg_masks.sum(dim=(1, 2))
             orders = torch.argsort(mask_density, descending=True)
             seg_masks = seg_masks[orders]
