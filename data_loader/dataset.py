@@ -135,96 +135,6 @@ class CustomIns_separate(data.Dataset):
             img = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_COLOR)
             img_name = img_path.split('/')[-1]
             label = f'{self.label_folder}/{img_name[:-4]}.json'
-            with open(label, 'r', encoding='gbk') as f:
-                content = json.load(f)
-
-            polygons, height, width = content['polygons'], content['img_height'], content['img_width']
-            assert img.shape[:2] == (height, width), 'image shape error!'
-
-            category = [self.cfg.class_names.index(one['category']) + 1 for one in polygons]
-            mask_list = get_seg_mask(self.cfg.class_names, polygons, height, width)
-
-            bboxes = []
-            for one in mask_list:
-                hs, ws = np.where(one > 0)
-                x1, x2 = float(ws.min()), float(ws.max())
-                y1, y2 = float(hs.min()), float(hs.max())
-                bboxes.append([x1, y1, x2, y2])
-
-            if len(category) > 0:
-                labels = np.array(category)
-                bboxes = np.array(bboxes)
-                masks = np.stack(mask_list, axis=2)  # (h, w, num)
-
-                assert masks.shape == (height, width, labels.shape[0]), 'Unmatched annotations.'
-
-                if self.mode == 'ann':
-                    return img, labels, bboxes, masks
-                elif self.mode == 'train':
-                    img, bboxes, masks = self.cfg.train_aug(img, bboxes, masks)
-                    return img, labels, bboxes, masks
-                elif self.mode == 'val':
-                    img, resize_shape = self.cfg.val_aug(img)
-                    return img, (height, width), resize_shape, img_name
-            else:
-                if self.mode == 'val':
-                    raise RuntimeError('Error, no valid object in this image.')
-                else:
-                    print(f'No valid object in image: "{img_name}". Use a repeated image in this batch.')
-                    return None, None, None, None
-
-    def get_aspect_ratios(self):
-        aspect_ratios = []
-        for one in self.ids:
-            img_path = self.imgs[one]
-            img = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_COLOR)
-            h, w = img.shape[:2]
-            aspect_ratios.append(float(h) / float(w))
-        return aspect_ratios
-
-    def __len__(self):
-        if self.mode == 'train':
-            return len(self.ids)
-        elif self.mode in ('val', 'ann'):
-            return len(self.ids) if self.cfg.val_num == -1 else min(self.cfg.val_num, len(self.ids))
-        elif self.mode == 'detect':
-            return len(self.imgs)
-
-    def img_ids(self):
-        return self.ids
-
-    def category_ids(self):
-        return list(range(1, self.cfg.num_classes))
-
-
-class CustomIns_onefile(data.Dataset):
-    def __init__(self, cfg):
-        self.cfg = cfg
-        self.mode = cfg.mode
-
-        if cfg.mode in ('train', 'val', 'ann'):
-            self.image_folder = cfg.train_imgs if cfg.mode == 'train' else cfg.val_imgs
-            self.label_folder = cfg.train_ann if cfg.mode == 'train' else cfg.val_ann
-            self.imgs = glob.glob(f'{self.image_folder}/*')
-        elif cfg.mode == 'detect':
-            self.imgs = glob.glob(f'{cfg.detect_images}/*')
-
-        self.imgs = [one for one in self.imgs if one[-3:] in ('bmp', 'jpg', 'png')]
-        self.imgs.sort()
-        self.ids = list(range(len(self.imgs)))
-
-    def __getitem__(self, index):
-        if self.mode == 'detect':
-            img_path = self.imgs[index]
-            img_origin = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_COLOR)
-            img, resize_shape = self.cfg.val_aug(img_origin)
-            img_show = cv2.resize(img_origin, (resize_shape[1], resize_shape[0]))
-            return img, resize_shape, img_path.split('/')[-1], img_show
-        else:
-            img_path = self.imgs[self.ids[index]]
-            img = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_COLOR)
-            img_name = img_path.split('/')[-1]
-            label = f'{self.label_folder}/{img_name[:-4]}.json'
             with open(label, 'r', encoding='utf-8') as f:
                 content = json.load(f)
 
@@ -285,3 +195,93 @@ class CustomIns_onefile(data.Dataset):
 
     def category_ids(self):
         return list(range(1, self.cfg.num_classes))
+
+
+# class CustomIns_onefile(data.Dataset):
+#     def __init__(self, cfg):
+#         self.cfg = cfg
+#         self.mode = cfg.mode
+#
+#         if cfg.mode in ('train', 'val', 'ann'):
+#             self.image_folder = cfg.train_imgs if cfg.mode == 'train' else cfg.val_imgs
+#             self.label_folder = cfg.train_ann if cfg.mode == 'train' else cfg.val_ann
+#             self.imgs = glob.glob(f'{self.image_folder}/*')
+#         elif cfg.mode == 'detect':
+#             self.imgs = glob.glob(f'{cfg.detect_images}/*')
+#
+#         self.imgs = [one for one in self.imgs if one[-3:] in ('bmp', 'jpg', 'png')]
+#         self.imgs.sort()
+#         self.ids = list(range(len(self.imgs)))
+#
+#     def __getitem__(self, index):
+#         if self.mode == 'detect':
+#             img_path = self.imgs[index]
+#             img_origin = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_COLOR)
+#             img, resize_shape = self.cfg.val_aug(img_origin)
+#             img_show = cv2.resize(img_origin, (resize_shape[1], resize_shape[0]))
+#             return img, resize_shape, img_path.split('/')[-1], img_show
+#         else:
+#             img_path = self.imgs[self.ids[index]]
+#             img = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_COLOR)
+#             img_name = img_path.split('/')[-1]
+#             label = f'{self.label_folder}/{img_name[:-4]}.json'
+#             with open(label, 'r', encoding='utf-8') as f:
+#                 content = json.load(f)
+#
+#             polygons, height, width = content['polygons'], content['img_height'], content['img_width']
+#             assert img.shape[:2] == (height, width), 'image shape error!'
+#
+#             category = [self.cfg.class_names.index(one['category']) + 1 for one in polygons]
+#             mask_list = get_seg_mask(self.cfg.class_names, polygons, height, width)
+#
+#             bboxes = []
+#             for one in mask_list:
+#                 hs, ws = np.where(one > 0)
+#                 x1, x2 = float(ws.min()), float(ws.max())
+#                 y1, y2 = float(hs.min()), float(hs.max())
+#                 bboxes.append([x1, y1, x2, y2])
+#
+#             if len(category) > 0:
+#                 labels = np.array(category)
+#                 bboxes = np.array(bboxes)
+#                 masks = np.stack(mask_list, axis=2)  # (h, w, num)
+#
+#                 assert masks.shape == (height, width, labels.shape[0]), 'Unmatched annotations.'
+#
+#                 if self.mode == 'ann':
+#                     return img, labels, bboxes, masks
+#                 elif self.mode == 'train':
+#                     img, bboxes, masks = self.cfg.train_aug(img, bboxes, masks)
+#                     return img, labels, bboxes, masks
+#                 elif self.mode == 'val':
+#                     img, resize_shape = self.cfg.val_aug(img)
+#                     return img, (height, width), resize_shape, img_name
+#             else:
+#                 if self.mode == 'val':
+#                     raise RuntimeError('Error, no valid object in this image.')
+#                 else:
+#                     print(f'No valid object in image: "{img_name}". Use a repeated image in this batch.')
+#                     return None, None, None, None
+#
+#     def get_aspect_ratios(self):
+#         aspect_ratios = []
+#         for one in self.ids:
+#             img_path = self.imgs[one]
+#             img = cv2.imdecode(np.fromfile(img_path, dtype='uint8'), cv2.IMREAD_COLOR)
+#             h, w = img.shape[:2]
+#             aspect_ratios.append(float(h) / float(w))
+#         return aspect_ratios
+#
+#     def __len__(self):
+#         if self.mode == 'train':
+#             return len(self.ids)
+#         elif self.mode in ('val', 'ann'):
+#             return len(self.ids) if self.cfg.val_num == -1 else min(self.cfg.val_num, len(self.ids))
+#         elif self.mode == 'detect':
+#             return len(self.imgs)
+#
+#     def img_ids(self):
+#         return self.ids
+#
+#     def category_ids(self):
+#         return list(range(1, self.cfg.num_classes))

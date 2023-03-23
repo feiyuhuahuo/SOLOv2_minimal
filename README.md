@@ -57,9 +57,16 @@ This project use `torch.jit.trace()` to export ONNX model. But there are some if
 When no object is detected, the model will encounter an error, please use try-except to skip it. For more details, consult `detetc_onnx.py`.  
 
 
-## Train custom datasets (todo)
+## Train custom datasets
 ![example.bmp](docs%2Fexample.bmp)  
-Please consult [HuaHuoLabel](https://github.com/feiyuhuahuo/HuaHuoLabel) to label your data.  
+Please use [HuaHuoLabel](https://github.com/feiyuhuahuo/HuaHuoLabel) to label your data. There are two label modes in `HuaHuoLabel`, for now the `Separate File` mode is supported in this project.  
+
+The directory structure:  
+![2023-03-23_09-52.png](docs%2F2023-03-23_09-52.png)  
+The label file format:  
+![2023-03-23_10-05.png](docs%2F2023-03-23_10-05.png)  
+The "qcolor" and "widget_points" are not necessary for training. Check [example.json](docs%2Fexample.json) for detail.  
+
 Write a custom configuration in `configs.py`. Choose this configuration in `train.py`.  
 Then:  
 
