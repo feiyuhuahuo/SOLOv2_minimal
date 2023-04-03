@@ -100,7 +100,7 @@ def pad_to_size_divisor_float(img, masks=None, size_divisor=32):
         return pad_img, pad_masks
 
 
-def coco_normalize(img, mean: np.ndarray, std: np.ndarray):
+def normalize(img, mean: np.ndarray, std: np.ndarray):
     img = img[:, :, (2, 1, 0)]  # to RGB first
     img = (img - mean) / std
     return img  # h, w, c  in rgb mode
@@ -125,7 +125,7 @@ class TrainAug:
         img, bboxes, masks = random_resize(img, bboxes, masks, img_scale=self.img_scale)
         bboxes = clip_box(img.shape[:2], bboxes)
         # show_ann(img, bboxes, masks)
-        img = coco_normalize(img, self.norm_mean, self.norm_std)
+        img = normalize(img, self.norm_mean, self.norm_std)
         img, masks = pad_to_size_divisor_float(img, masks)
         return img, bboxes, masks
 
@@ -143,7 +143,7 @@ class ValAug:
     def __call__(self, img):
         img, _, _ = random_resize(img, img_scale=self.img_scale)
         resize_shape = img.shape[:2]
-        img = coco_normalize(img, self.norm_mean, self.norm_std)
+        img = normalize(img, self.norm_mean, self.norm_std)
         img, _ = pad_to_size_divisor_float(img)
         return img, resize_shape
 

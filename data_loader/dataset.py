@@ -194,7 +194,7 @@ class CustomIns_separate(data.Dataset):
         return self.ids
 
     def category_ids(self):
-        return list(range(1, self.cfg.num_classes))
+        return list(range(1, self.cfg.num_classes + 1))
 
 
 # class CustomIns_onefile(data.Dataset):

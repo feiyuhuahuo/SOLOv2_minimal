@@ -6,7 +6,7 @@ from data_loader.augmentations import TrainAug, ValAug
 from utils.utils import COCO_CLASSES
 from utils.onnx_trans import *
 
-TrainBatchSize = 10
+TrainBatchSize = 16
 
 
 class Solov2_res50:
@@ -23,7 +23,7 @@ class Solov2_res50:
         self.resnet_depth = 50
         self.fpn_in_c = [256, 512, 1024, 2048]
         self.class_names = COCO_CLASSES
-        self.num_classes = len(self.class_names) + 1
+        self.num_classes = len(self.class_names)
         self.head_stacked_convs = 4
         self.head_seg_feat_c = 512
         self.head_scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048))
@@ -41,7 +41,7 @@ class Solov2_res50:
         self.val_interval = 1
         self.start_save = 0
 
-        self.val_weight = 'weights/Solov2_res50_32.pth'
+        self.val_weight = 'weights/Solov2_res50_35.pth'
         self.val_bs = 1
         self.val_aug = ValAug(img_scale=[(1333, 800)])
         self.val_num = -1
@@ -104,7 +104,7 @@ class Solov2_light_res34(Solov2_res50):
         super().__init__(mode)
         self.resnet_depth = 34
         self.pretrained = 'weights/backbone_resnet34.pth'
-        self.break_weight = 'weights/Solov2_light_res34_34.pth'
+        self.break_weight = ''
         self.fpn_in_c = [64, 128, 256, 512]
         self.head_stacked_convs = 2
         self.head_seg_feat_c = 256
@@ -130,22 +130,22 @@ class Custom_light_res50(Solov2_light_res50):
                             '吸盘印', '隐裂', '雾状发黑', '同心圆', '块状黑斑')
         # self.class_names = ('ds', 'hb', 'byhb', 'h_bian', 'hs', 'qly', 'cc',
         #                     'xpy', 'yl', 'wzfh', 'txy', 'kzhb')
-        self.num_classes = len(self.class_names) + 1
+        self.num_classes = len(self.class_names)
         self.epochs = 400
         self.warm_up_iters = 500  # bs=16时，基本就是500左右
         self.lr_decay_steps = (300, 360)
         self.start_save = 100
         self.val_interval = 20
-        self.train_aug = TrainAug(mean=[127., 127., 127], std=[60., 60., 60],
+        self.train_aug = TrainAug(mean=[0., 0., 0], std=[255., 255., 255.],
                                   img_scale=[(576, 576), (544, 544),
                                              (512, 512), (480, 480), (448, 448)],
                                   v_flip=True)
         self.break_weight = ''
 
-        self.val_aug = ValAug(mean=[127., 127., 127], std=[60., 60., 60],
+        self.val_aug = ValAug(mean=[0., 0., 0], std=[255., 255., 255],
                               img_scale=[(512, 512)])
-        self.val_weight = 'weights/Custom_light_res50_340.pth'
-        self.detect_images = 'detect_imgs'  # '/home/feiyu/Data/nanjiao/nanjiao_seg/语义分割/bgs'
+        self.val_weight = 'weights/Custom_light_res50_320.pth'
+        self.detect_images = self.val_imgs  # '/home/feiyu/Data/nanjiao/nanjiao_seg/语义分割/bgs'
         if self.mode in ('detect', 'onnx'):
             self.postprocess_para['update_thr'] = 0.3
         self.postprocess_para['mask_thr'] = 0.5
@@ -155,5 +155,4 @@ class Custom_light_res50(Solov2_light_res50):
 
 
 # todo: 调整head_scale_ranges参数
-# todo： 随机padding
 # todo: 可视化时用类相关的score？ 用MPP决定

@@ -108,6 +108,6 @@ def val(cfg, model=None):
 
 
 if __name__ == '__main__':
-    cfg = Custom_light_res50(mode='val')
+    cfg = Solov2_light_res34(mode='val')
     cfg.print_cfg()
     val(cfg)

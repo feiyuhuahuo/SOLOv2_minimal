@@ -88,7 +88,7 @@ class SOLOv2Head(nn.Module):
                  sigma=0.2, num_grids=(40, 36, 24, 16, 12), ins_out_channels=64):
         super(SOLOv2Head, self).__init__()
         self.num_grids = num_grids
-        self.cate_out_ch = num_classes - 1
+        self.cate_out_ch = num_classes
         self.in_channels = in_channels
         self.seg_feat_channels = seg_feat_channels
         self.stacked_convs = stacked_convs
@@ -208,8 +208,9 @@ class SOLOv2Head(nn.Module):
 
             gt_bboxes = gt_bboxes_raw[hit_indices]
             gt_labels = gt_labels_raw[hit_indices]
-            gt_masks = gt_masks_raw[hit_indices.cpu().numpy(), ...]
 
+            # gt_masks_raw (N, h, w)
+            gt_masks = gt_masks_raw[hit_indices.cpu().numpy(), ...]
             half_ws = 0.5 * (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * self.sigma
             half_hs = 0.5 * (gt_bboxes[:, 3] - gt_bboxes[:, 1]) * self.sigma
 
@@ -242,10 +243,11 @@ class SOLOv2Head(nn.Module):
 
                 cate_label[top:(down + 1), left:(right + 1)] = gt_label
 
+                # gt_mask (h, w)
                 h, w = gt_mask.shape[:2]
                 scale = 1. / 4
                 new_w, new_h = int(w * float(scale) + 0.5), int(h * float(scale) + 0.5)
-                gt_mask = cv2.resize(gt_mask, (new_w, new_h), interpolation=cv2.INTER_LINEAR)  # todo: why LINEAR?
+                gt_mask = cv2.resize(gt_mask, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
                 gt_mask = torch.from_numpy(gt_mask).to(device=device)
 
                 for i in range(top, down + 1):

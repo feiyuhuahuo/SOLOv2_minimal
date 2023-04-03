@@ -39,7 +39,7 @@ def show_ann(img, boxes, masks):
 
 
 if __name__ == '__main__':
-    cfg = Solov2_res50(mode='train')
+    cfg = Solov2_light_res50(mode='train')
     cfg.print_cfg()
 
     model = SOLOv2(cfg).cuda()

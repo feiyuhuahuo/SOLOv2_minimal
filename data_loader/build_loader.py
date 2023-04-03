@@ -19,10 +19,6 @@ def detect_collate(batch):
     return imgs, batch[0][1], batch[0][2], batch[0][3]
 
 
-def detect_onnx_collate(batch):
-    return batch[0][0][None, :], batch[0][1], batch[0][2]
-
-
 class group_sampler:
     """
     Wraps another sampler to yield a mini-batch of indices.
@@ -134,22 +130,21 @@ def batch_collator_random_pad(batch):
 
         pad_imgs_batch[i, new_h:new_h + ori_h, new_w:new_w + ori_w, :] = img
 
-        pad_labels_batch.append(torch.tensor(labels_batch[i], dtype=torch.int64, device='cuda'))
+        pad_labels_batch.append(torch.tensor(labels_batch[i], dtype=torch.int64))
 
         ori_bboxes = bboxes_batch[i]
         pad_bboxes = ori_bboxes.copy()
         pad_bboxes[:, [0, 2]] = pad_bboxes[:, [0, 2]] + new_w
         pad_bboxes[:, [1, 3]] = pad_bboxes[:, [1, 3]] + new_h
-        pad_bboxes_batch.append(torch.tensor(pad_bboxes, dtype=torch.float32, device='cuda'))
+        pad_bboxes_batch.append(torch.tensor(pad_bboxes, dtype=torch.float32))
 
         ori_masks = masks_batch[i]
         pad_masks = np.zeros((batch_shape[1], batch_shape[2], ori_masks.shape[2]), dtype='uint8')
         pad_masks[new_h:new_h + ori_h, new_w:new_w + ori_w, :] = ori_masks
-        pad_masks_batch.append(torch.tensor(pad_masks.transpose(2, 0, 1), dtype=torch.uint8, device='cuda'))
+        pad_masks_batch.append(pad_masks.transpose(2, 0, 1).astype('uint8'))
 
     pad_imgs_batch = pad_imgs_batch.transpose(0, 3, 1, 2)
-    return torch.tensor(pad_imgs_batch, dtype=torch.float32, device='cuda'), \
-        pad_labels_batch, pad_bboxes_batch, pad_masks_batch
+    return torch.tensor(pad_imgs_batch, dtype=torch.float32), pad_labels_batch, pad_bboxes_batch, pad_masks_batch
 
 
 def batch_collator_tl_pad(batch):
@@ -185,7 +180,7 @@ def make_data_loader(cfg):
         sampler = data.RandomSampler(dataset)
         batch_sampler = group_sampler(sampler, group_ids, cfg.train_bs, drop_uneven=False)  # same as drop_last
         return data.DataLoader(dataset, num_workers=cfg.train_workers,
-                               batch_sampler=batch_sampler, collate_fn=batch_collator_tl_pad)
+                               batch_sampler=batch_sampler, collate_fn=batch_collator_random_pad)
     else:
         if cfg.mode == 'val':
             collator = val_collate

@@ -45,8 +45,7 @@ class SOLOv2(nn.Module):
         cate_preds, kernel_preds = self.bbox_head(x)  # (bs, S, S, num_classes), (bs, out_c, S, S)
 
         if self.training:
-            loss_inputs = (cate_preds, kernel_preds, mask_feat_pred, gt_bboxes, gt_labels, gt_masks)
-            return self.bbox_head.loss(*loss_inputs)
+            return self.bbox_head.loss(cate_preds, kernel_preds, mask_feat_pred, gt_bboxes, gt_labels, gt_masks)
         else:
             if self.mode == 'onnx':
                 resize_shape = self.onnx_shape
