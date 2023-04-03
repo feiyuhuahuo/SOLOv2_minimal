@@ -24,7 +24,7 @@ if __name__ == '__main__':
     class_suffix = '-'.join(list(cfg.class_names))
     inp_names = [f'seg_{input_size[0]}_{input_size[1]}-{class_suffix}']
     # input_img = torch.randint(0, 255, (input_size[0], input_size[1], 3), device='cuda', dtype=torch.uint8)
-    input_img = cv2.imread('detect_imgs/test1.bmp', cv2.IMREAD_GRAYSCALE)
+    input_img = cv2.imread('docs/test1.bmp', cv2.IMREAD_GRAYSCALE)
     input_img = cv2.resize(input_img, input_size)
     input_img = torch.from_numpy(input_img).cuda()
 
