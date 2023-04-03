@@ -11,10 +11,10 @@ if __name__ == '__main__':
     cfg.print_cfg()
 
     model = SOLOv2(cfg).cuda()
-    state_dict = torch.load(cfg.val_weight)
-    print(f'Detecting with "{cfg.val_weight}.')
-
-    model.load_state_dict(state_dict, strict=True)
+    # state_dict = torch.load(cfg.val_weight)
+    # print(f'Detecting with "{cfg.val_weight}.')
+    #
+    # model.load_state_dict(state_dict, strict=True)
     model.eval()
 
     os.makedirs('onnx_files', exist_ok=True)
